@@ -154,6 +154,17 @@ tbody tr.click:hover td{background:var(--raise)}
 .iconbtn{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg2)}
 .iconbtn:hover{background:var(--raise)}
 .iconbtn svg{width:20px;height:20px}
+#printArea{display:none}
+/* Label sheet: 3 across on A4, sized for 60 mm vinyl labels; code printed under the QR in case the camera fails */
+@media print{
+  @page{size:A4;margin:10mm}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:grid!important;grid-template-columns:repeat(3,60mm);gap:4mm;background:#fff}
+  #printArea .label{width:60mm;height:60mm;border:0.3mm dashed #999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5mm;break-inside:avoid;color:#000;font-family:var(--font)}
+  #printArea svg{width:38mm;height:38mm}
+  #printArea .code{font:600 13pt var(--mono)}
+  #printArea .gas{font-size:9pt}
+}
 </style>
 
 <div class="app">
@@ -171,6 +182,7 @@ tbody tr.click:hover td{background:var(--raise)}
 <nav class="tabbar" id="navPhone" aria-label="Main"></nav>
 <div id="layer"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 const DAY = 86400000;
 const NOW = Date.now();
@@ -400,14 +412,15 @@ function viewCylinders(){
   if (state.gas) list = list.filter(c => c.type === state.gas);
   const rows = list.map(c => {
     const cl = c.clientId && clientById(c.clientId);
-    return `<tr ${cl ? `class="click" data-client="${cl.id}"` : ""}><td class="mono">${c.code}</td><td>${c.type}</td><td>${cl ? esc(cl.name) : "<span class='demo'>In godown</span>"}</td><td>${cl ? fmtDate(c.since) : "—"}</td><td>${cl ? statusPill(c) : `<span class="pill mute">Ready</span>`}</td></tr>`;
+    return `<tr ${cl ? `class="click" data-client="${cl.id}"` : ""}><td class="mono">${c.code}</td><td>${c.type}</td><td>${cl ? esc(cl.name) : "<span class='demo'>In godown</span>"}</td><td>${cl ? fmtDate(c.since) : "—"}</td><td>${cl ? statusPill(c) : `<span class="pill mute">Ready</span>`}</td><td class="num"><button class="btn sm" data-qr="${c.code}" aria-label="Show QR for ${c.code}">QR</button></td></tr>`;
   }).join("");
   const seg = [["all","All"],["out","With clients"],["late","Late"],["home","In godown"]].map(([k, l]) => `<button data-filter-set="${k}" aria-pressed="${f === k}">${l}</button>`).join("");
   return `
-    <div class="head"><div><h1>Cylinders</h1><p class="sub">${state.cylinders.length} cylinders with QR tags</p></div></div>
+    <div class="head"><div><h1>Cylinders</h1><p class="sub">${state.cylinders.length} cylinders with QR tags</p></div>
+      <div class="toolbar"><button class="btn" data-act="printShown">Print labels</button><button class="btn primary" data-act="addCyl">+ Add cylinders</button></div></div>
     <div class="toolbar"><div class="seg">${seg}</div>
       <select class="search" id="gasFilter" style="flex:0 1 220px;min-width:160px" aria-label="Filter by gas"><option value="">All gases</option>${Object.keys(REFILL_PRICE).map(t => `<option ${state.gas === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Gas</th><th>Where</th><th>Given on</th><th>Status</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">No cylinders here.</div></td></tr>`}</tbody></table></div>`;
+    <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Gas</th><th>Where</th><th>Given on</th><th>Status</th><th class="num">Label</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">No cylinders here.</div></td></tr>`}</tbody></table></div>`;
 }
 
 function viewTrash(){
@@ -556,6 +569,7 @@ applyLayout(store.get("cd-layout") || (realPhone ? "mobile" : "desktop"));
 seedData();
 render();
 </script>
+<script src="labels.js"></script>
 
 </body>
 </html>
