@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Cylindesk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: left rail on desktop, bottom tab bar + big scan button on phone. One calm blue accent, status lives in small pills. */
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --raise:#F0F0F8; --line:#E6E6EE;
+  --fg:#0D0D1A; --fg2:#555570; --fg3:#9999B0;
+  --accent:#005AE0; --accent-soft:#E0ECFF; --accent-fg:#FFFFFF;
+  --ok:#16A34A; --ok-bg:#E8F7EE; --warn:#B45309; --warn-bg:#FEF3E2; --bad:#DC2626; --bad-bg:#FDECEC;
+  --font:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#09090F; --card:#111118; --raise:#18181F; --line:#23232E;
+  --fg:#EEEEF5; --fg2:#A0A0BC; --fg3:#6A6A88;
+  --accent:#3380F0; --accent-soft:#132544; --accent-fg:#FFFFFF;
+  --ok:#4ADE80; --ok-bg:#0F2A1A; --warn:#FBBF24; --warn-bg:#2B210B; --bad:#F87171; --bad-bg:#2C1212; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#09090F; --card:#111118; --raise:#18181F; --line:#23232E;
+  --fg:#EEEEF5; --fg2:#A0A0BC; --fg3:#6A6A88;
+  --accent:#3380F0; --accent-soft:#132544; --accent-fg:#FFFFFF;
+  --ok:#4ADE80; --ok-bg:#0F2A1A; --warn:#FBBF24; --warn-bg:#2B210B; --bad:#F87171; --bad-bg:#2C1212; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+.rail{border-right:1px solid var(--line);background:var(--card);padding:20px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 20px;font-weight:600;font-size:17px}
+.brand i{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:var(--accent-fg);font-style:normal;font-size:14px}
+.nav{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:0;background:none;text-align:left;color:var(--fg2);min-height:44px;font-weight:500}
+.nav svg{width:20px;height:20px;flex:none}
+.nav:hover{background:var(--raise)}
+.nav[aria-current="true"]{background:var(--accent-soft);color:var(--accent)}
+.nav .count{margin-left:auto;font-size:12px;color:var(--fg3)}
+.rail .foot{margin-top:auto;font-size:12px;color:var(--fg3);padding:0 12px}
+main{min-width:0;padding-block:28px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:28px;font-weight:600;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:16px;font-weight:600;margin:0}
+.sub{color:var(--fg2);margin:2px 0 0}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:500}
+.btn:hover{background:var(--raise)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:4px;text-align:left}
+.stat .k{font-size:13px;color:var(--fg2)}
+.stat .v{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .h{font-size:12px;color:var(--fg3)}
+.stat.alert .v{color:var(--bad)}
+button.stat:hover{border-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+.grid2>*{min-width:0}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--fg2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+.chart text{fill:var(--fg3);font-size:11px;font-family:var(--font)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.mute{background:var(--raise);color:var(--fg2)}
+.list{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .t{font-weight:500}
+.row .s{font-size:13px;color:var(--fg2)}
+.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{text-align:left;font-size:12px;font-weight:500;color:var(--fg3);text-transform:uppercase;letter-spacing:.06em;padding:12px 16px;border-bottom:1px solid var(--line)}
+td{padding:14px 16px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--raise)}
+.num{text-align:right}
+.mono{font-family:var(--mono);font-size:13px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search{flex:1;min-width:200px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:0 14px}
+.seg{display:inline-flex;background:var(--raise);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;padding:0 12px;min-height:38px;border-radius:8px;color:var(--fg2);font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.back{border:0;background:none;color:var(--fg2);padding:0;min-height:32px;display:inline-flex;gap:6px;align-items:center}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.timeline .row{grid-template-columns:28px 1fr auto}
+.dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px}
+.dot.out{background:var(--accent-soft);color:var(--accent)}
+.dot.in{background:var(--ok-bg);color:var(--ok)}
+.dot.pay{background:var(--raise);color:var(--fg2)}
+.empty{padding:40px 16px;text-align:center;color:var(--fg2)}
+.banner{display:flex;gap:12px;align-items:center;background:var(--accent-soft);color:var(--fg);border-radius:var(--r);padding:12px 16px;font-size:14px}
+.demo{font-size:12px;color:var(--fg3)}
+/* Sheet (modal on desktop, bottom sheet on phone) */
+.scrim{position:fixed;inset:0;background:rgba(10,10,20,.45);z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet{background:var(--card);border-radius:16px;width:100%;max-width:440px;max-height:90vh;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;color:var(--fg2);font-weight:500}
+.field input,.field select{height:48px;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:0 14px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:8px;justify-content:flex-end}
+.viewfinder{aspect-ratio:1;max-width:100%;border-radius:16px;background:#0B0B12;position:relative;overflow:hidden;display:grid;place-items:center}
+.viewfinder .frame{width:62%;aspect-ratio:1;border:3px solid rgba(255,255,255,.85);border-radius:18px}
+.viewfinder .laser{position:absolute;left:19%;right:19%;height:2px;background:#3380F0;box-shadow:0 0 12px #3380F0;animation:scan 1.8s ease-in-out infinite alternate}
+@keyframes scan{from{top:22%}to{top:76%}}
+.viewfinder p{position:absolute;bottom:12px;margin:0;color:rgba(255,255,255,.7);font-size:13px}
+.found{display:flex;gap:12px;align-items:center;background:var(--raise);border-radius:12px;padding:14px}
+.found .ic{width:44px;height:44px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;z-index:60;font-size:14px}
+.tabbar,.fab{display:none}
+@media (prefers-reduced-motion:reduce){.viewfinder .laser{animation:none;top:50%}}
+@media (max-width:900px){
+  .stats,.kv{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr}
+}
+.m .app{grid-template-columns:1fr;max-width:440px;margin:0 auto}
+.m .rail{display:none}
+.m main{padding-block:16px 160px}
+.m h1{font-size:24px}
+.m .stats,.m .kv{grid-template-columns:repeat(2,1fr)}
+.m .grid2{grid-template-columns:1fr}
+.m .tabbar{display:flex;position:fixed;left:50%;transform:translateX(-50%);width:min(100%,440px);bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.m .tabbar .nav{flex:1;flex-direction:column;gap:2px;font-size:11px;padding:6px 4px;justify-content:center}
+.m .tabbar .nav .count{display:none}
+.m .sheet{align-self:flex-end;border-radius:20px 20px 0 0;max-width:440px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.m .scrim{padding:0}
+.m .hide-sm{display:none}
+.m .topbar .brand{display:flex}
+/* Scan button lives only in phone view: the laptop is for looking, the phone is for scanning */
+.m .fab{display:flex;position:fixed;z-index:35;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  align-items:center;gap:10px;height:56px;padding:0 26px;border-radius:99px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:16px;box-shadow:0 8px 24px rgba(0,90,224,.35)}
+.m:not(.phone-real) body{background:var(--raise)}
+.m:not(.phone-real) main{background:var(--bg);min-height:100vh;border-inline:1px solid var(--line)}
+.topbar{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.topbar .brand{display:none;padding:0;margin-right:auto}
+.iconbtn{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg2)}
+.iconbtn:hover{background:var(--raise)}
+.iconbtn svg{width:20px;height:20px}
+</style>
+
+<div class="app">
+  <nav class="rail" aria-label="Main">
+    <div class="brand"><i>C</i>Cylindesk</div>
+    <div id="navDesk"></div>
+    <div class="foot">Prototype · sample data</div>
+  </nav>
+  <main><div class="wrap"><div class="topbar">
+      <div class="brand"><i>C</i>Cylindesk</div>
+      <div class="seg" role="group" aria-label="Layout"><button id="vDesk" type="button">Desktop</button><button id="vMob" type="button">Mobile</button></div>
+      <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
+    </div><div class="wrap" id="view"></div></div></main>
+</div>
+<nav class="tabbar" id="navPhone" aria-label="Main"></nav>
+<button class="fab" id="fab" type="button">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>
+  Scan QR
+</button>
+<div id="layer"></div>
+
+<script>
+const DAY = 86400000;
+const NOW = Date.now();
+const TRASH_DAYS = 30;
+const REFILL_PRICE = { "14.2 kg": 950, "19 kg": 1850, "47.5 kg": 4600 };
+
+const ICONS = {
+  home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  clients: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.5 3.5 5.2"/>',
+  cyl: '<rect x="7" y="6" width="10" height="15" rx="3"/><path d="M10 3h4v3h-4zM7 11h10"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'
+};
+const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+
+/* ---------- Sample data (fake, regenerated on each load) ---------- */
+const CLIENT_SEED = [
+  ["Sri Sai Tiffin Centre","98480 12345","Ameerpet",15,"14.2 kg"],
+  ["Hotel Paradise Mess","99890 22341","Kukatpally",20,"19 kg"],
+  ["Lakshmi Sweets","90000 45671","Dilsukhnagar",15,"14.2 kg"],
+  ["Annapurna Caterers","98660 78120","Miyapur",30,"47.5 kg"],
+  ["Royal Biryani House","96760 11209","Tolichowki",10,"19 kg"],
+  ["Green Leaf Hostel","93910 55432","Madhapur",30,"19 kg"],
+  ["Venkateswara Bakery","97010 66547","Secunderabad",15,"14.2 kg"],
+  ["Krishna Dhaba","98850 30981","Shamshabad",20,"47.5 kg"],
+  ["Ruchi Fast Food","94400 87213","LB Nagar",10,"14.2 kg"]
+];
+const state = { clients: [], cylinders: [], events: [], view: "home", clientId: null, filter: "all", q: "" };
+
+function rand(seed){ let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function seedData(){
+  const r = rand(42);
+  state.clients = CLIENT_SEED.map(([name, phone, area, returnDays, type], i) => ({
+    id: "c" + i, name, phone, area, returnDays, type, deletedAt: null, addedAt: NOW - (120 + i * 9) * DAY
+  }));
+  state.clients[8].deletedAt = NOW - 6 * DAY;
+  const types = Object.keys(REFILL_PRICE);
+  for (let i = 1; i <= 64; i++) state.cylinders.push({ code: "CYL-" + String(i).padStart(4, "0"), type: types[i % 7 === 0 ? 2 : i % 3 === 0 ? 1 : 0], clientId: null, since: null });
+
+  // Walk 60 days of history so the charts and balances come from real event math.
+  for (let d = 60; d >= 0; d--) {
+    const day = NOW - d * DAY;
+    state.cylinders.forEach(cyl => {
+      if (cyl.clientId && r() < 0.06) addEvent("in", cyl, cyl.clientId, day + r() * 36e6);
+    });
+    const deliveries = Math.floor(r() * 4);
+    for (let k = 0; k < deliveries; k++) {
+      const free = state.cylinders.filter(c => !c.clientId);
+      const client = state.clients[Math.floor(r() * 8)];
+      if (!free.length) break;
+      addEvent("out", free[Math.floor(r() * free.length)], client.id, day + r() * 36e6);
+    }
+    if (r() < 0.35) {
+      const client = state.clients[Math.floor(r() * 8)];
+      const due = balanceDue(client.id);
+      if (due > 0) state.events.push({ kind: "pay", clientId: client.id, at: day + 4e7, amount: Math.round(due * (0.5 + r() * 0.5) / 50) * 50 });
+    }
+  }
+}
+function addEvent(kind, cyl, clientId, at){
+  state.events.push({ kind, code: cyl.code, type: cyl.type, clientId, at, amount: kind === "out" ? REFILL_PRICE[cyl.type] : 0 });
+  cyl.clientId = kind === "out" ? clientId : null;
+  cyl.since = kind === "out" ? at : null;
+}
+
+/* ---------- Derived numbers ---------- */
+const clientById = (id) => state.clients.find(c => c.id === id);
+const activeClients = () => state.clients.filter(c => !c.deletedAt);
+const eventsOf = (id) => state.events.filter(e => e.clientId === id);
+const heldBy = (id) => state.cylinders.filter(c => c.clientId === id);
+function daysOut(cyl){ return Math.floor((NOW - cyl.since) / DAY); }
+function overdueDays(cyl){ return daysOut(cyl) - clientById(cyl.clientId).returnDays; }
+function balanceDue(id){
+  return eventsOf(id).reduce((sum, e) => e.kind === "out" ? sum + e.amount : e.kind === "pay" ? sum - e.amount : sum, 0);
+}
+function clientSummary(c){
+  const ev = eventsOf(c.id);
+  const held = heldBy(c.id);
+  const late = held.filter(x => overdueDays(x) > 0);
+  return {
+    sent: ev.filter(e => e.kind === "out").length,
+    back: ev.filter(e => e.kind === "in").length,
+    holding: held.length,
+    late: late.length,
+    worst: late.length ? Math.max(...late.map(overdueDays)) : 0,
+    due: balanceDue(c.id)
+  };
+}
+const rupees = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+const fmtDate = (t) => new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+const fmtTime = (t) => new Date(t).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const esc = (s) => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+
+function statusPill(cyl){
+  const late = overdueDays(cyl);
+  if (late > 0) return `<span class="pill bad">${late} day${late > 1 ? "s" : ""} late</span>`;
+  if (late >= -3) return `<span class="pill warn">Due in ${-late || "0"} day${late === -1 ? "" : "s"}</span>`;
+  return `<span class="pill ok">${-late} days left</span>`;
+}
+
+/* ---------- Navigation ---------- */
+const NAV = [["home","Home","home"],["clients","Clients","clients"],["cylinders","Cylinders","cyl"],["trash","Trash","trash"]];
+function renderNav(){
+  const html = NAV.map(([id, label, ic]) => {
+    const count = id === "trash" ? state.clients.filter(c => c.deletedAt).length || "" : "";
+    const current = state.view === id || (id === "clients" && state.view === "client");
+    return `<button class="nav" data-go="${id}" aria-current="${current}">${icon(ic)}<span>${label}</span><span class="count">${count}</span></button>`;
+  }).join("");
+  document.getElementById("navDesk").innerHTML = html;
+  document.getElementById("navPhone").innerHTML = html;
+}
+function go(view, clientId){ state.view = view; state.clientId = clientId || null; render(); window.scrollTo(0, 0); }
+
+/* ---------- Charts (hand-drawn SVG, one scale per chart) ---------- */
+function flowChart(){
+  const days = 14, W = 640, H = 220, pad = { l: 28, r: 8, t: 12, b: 28 };
+  const buckets = Array.from({ length: days }, (_, i) => ({ t: NOW - (days - 1 - i) * DAY, out: 0, in: 0 }));
+  state.events.forEach(e => {
+    const idx = days - 1 - Math.floor((NOW - e.at) / DAY);
+    if (idx >= 0 && idx < days && e.kind !== "pay") buckets[idx][e.kind]++;
+  });
+  const max = Math.max(4, ...buckets.map(b => Math.max(b.out, b.in)));
+  const top = Math.ceil(max / 2) * 2;
+  const cw = (W - pad.l - pad.r) / days, bw = Math.min(10, cw / 3.2);
+  const y = (v) => pad.t + (H - pad.t - pad.b) * (1 - v / top);
+  let svg = "";
+  for (let v = 0; v <= top; v += top / 2) svg += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  buckets.forEach((b, i) => {
+    const cx = pad.l + cw * i + cw / 2;
+    svg += `<rect x="${cx - bw - 1}" y="${y(b.out)}" width="${bw}" height="${y(0) - y(b.out)}" rx="3" fill="var(--accent)"><title>${fmtDate(b.t)}: ${b.out} sent</title></rect>`;
+    svg += `<rect x="${cx + 1}" y="${y(b.in)}" width="${bw}" height="${y(0) - y(b.in)}" rx="3" fill="var(--fg3)" opacity=".55"><title>${fmtDate(b.t)}: ${b.in} received</title></rect>`;
+    if (i % 2 === 1 || i === days - 1) svg += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${i === days - 1 ? "Today" : fmtDate(b.t)}</text>`;
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Cylinders sent and received, last 14 days">${svg}</svg>`;
+}
+function stockBar(){
+  const total = state.cylinders.length;
+  const withClients = state.cylinders.filter(c => c.clientId);
+  const late = withClients.filter(c => overdueDays(c) > 0).length;
+  const parts = [["In godown", total - withClients.length, "var(--fg3)"], ["With clients", withClients.length - late, "var(--accent)"], ["Late", late, "var(--bad)"]];
+  const bar = parts.map(([, n, col]) => `<span style="flex:${n};background:${col}"></span>`).join("");
+  const rows = parts.map(([label, n, col]) => `<div class="row"><div class="t" style="display:flex;gap:10px;align-items:center"><b style="width:10px;height:10px;border-radius:3px;background:${col};display:inline-block"></b>${label}</div><div class="mono">${n}</div></div>`).join("");
+  return `<div style="display:flex;gap:3px;height:14px;border-radius:7px;overflow:hidden;margin:14px 0 8px">${bar}</div><div class="list">${rows}</div>`;
+}
+
+/* ---------- Views ---------- */
+function viewHome(){
+  const clients = activeClients();
+  const out = state.cylinders.filter(c => c.clientId);
+  const late = out.filter(c => overdueDays(c) > 0).sort((a, b) => overdueDays(b) - overdueDays(a));
+  const due = clients.reduce((s, c) => s + Math.max(0, balanceDue(c.id)), 0);
+  const today = state.events.filter(e => NOW - e.at < DAY && e.kind !== "pay");
+  const lateRows = late.slice(0, 6).map(c => {
+    const cl = clientById(c.clientId);
+    return `<div class="row click" data-client="${cl.id}" style="cursor:pointer"><div><div class="t">${esc(cl.name)}</div><div class="s"><span class="mono">${c.code}</span> · given ${fmtDate(c.since)}</div></div>${statusPill(c)}</div>`;
+  }).join("") || `<div class="empty">Nothing late. Every cylinder is within its time.</div>`;
+  return `
+    <div class="head"><div><h1>Good ${new Date().getHours() < 12 ? "morning" : "evening"}</h1><p class="sub">${new Date(NOW).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p></div>
+    <button class="btn primary hide-sm" data-act="newClient">+ Add client</button></div>
+    <div class="banner"><span class="pill mute">Demo</span>All names and numbers here are sample data for the prototype.</div>
+    <section class="stats">
+      <button class="stat" data-go="cylinders" data-filter="out"><span class="k">With clients</span><span class="v">${out.length}</span><span class="h">of ${state.cylinders.length} cylinders</span></button>
+      <button class="stat alert" data-go="cylinders" data-filter="late"><span class="k">Late returns</span><span class="v">${late.length}</span><span class="h">past return time</span></button>
+      <div class="stat"><span class="k">Money to collect</span><span class="v">${rupees(due)}</span><span class="h">from ${clients.filter(c => balanceDue(c.id) > 0).length} clients</span></div>
+      <div class="stat"><span class="k">Today</span><span class="v">${today.filter(e => e.kind === "out").length} / ${today.filter(e => e.kind === "in").length}</span><span class="h">sent / received</span></div>
+    </section>
+    <section class="grid2">
+      <div class="card"><div class="head"><h2>Sent and received</h2><div class="legend"><span><b style="background:var(--accent)"></b>Sent</span><span><b style="background:var(--fg3);opacity:.55"></b>Received</span></div></div><div style="margin-top:12px">${flowChart()}</div></div>
+      <div class="card"><h2>Where cylinders are</h2>${stockBar()}</div>
+    </section>
+    <section class="card"><div class="head"><h2>Call these clients first</h2><button class="btn sm" data-go="cylinders" data-filter="late">See all late</button></div><div class="list" style="margin-top:8px">${lateRows}</div></section>`;
+}
+
+function viewClients(){
+  const q = state.q.toLowerCase();
+  const rows = activeClients().filter(c => !q || (c.name + c.phone + c.area).toLowerCase().includes(q)).map(c => {
+    const s = clientSummary(c);
+    const st = s.late ? `<span class="pill bad">${s.late} late · ${s.worst}d</span>` : s.holding ? `<span class="pill ok">On time</span>` : `<span class="pill mute">Nothing out</span>`;
+    return `<tr class="click" data-client="${c.id}"><td><div style="font-weight:500">${esc(c.name)}</div><div class="demo">${esc(c.area)} · ${esc(c.phone)}</div></td>
+      <td class="num">${s.sent}</td><td class="num">${s.back}</td><td class="num" style="font-weight:600">${s.holding}</td>
+      <td>${st}</td><td class="num">${s.due > 0 ? rupees(s.due) : "<span class='demo'>Paid</span>"}</td></tr>`;
+  }).join("");
+  return `
+    <div class="head"><div><h1>Clients</h1><p class="sub">${activeClients().length} active clients</p></div><button class="btn primary" data-act="newClient">+ Add client</button></div>
+    <div class="toolbar"><input class="search" id="clientSearch" type="search" placeholder="Search by name, phone or area" value="${esc(state.q)}"></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Client</th><th class="num">Sent</th><th class="num">Received</th><th class="num">Holding</th><th>Return status</th><th class="num">To collect</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="6"><div class="empty">No client matches “${esc(state.q)}”.</div></td></tr>`}</tbody></table></div>`;
+}
+
+function viewClient(){
+  const c = clientById(state.clientId);
+  const s = clientSummary(c);
+  const held = heldBy(c.id).sort((a, b) => a.since - b.since);
+  const heldRows = held.map(x => `<tr><td class="mono">${x.code}</td><td>${x.type}</td><td>${fmtDate(x.since)}</td><td class="num">${daysOut(x)}</td><td>${statusPill(x)}</td></tr>`).join("");
+  const hist = eventsOf(c.id).sort((a, b) => b.at - a.at).slice(0, 12).map(e => {
+    const map = { out: ["out", "↑", "Delivered " + e.code, rupees(e.amount)], in: ["in", "↓", "Received back " + e.code, ""], pay: ["pay", "₹", "Payment received", "−" + rupees(e.amount)] }[e.kind];
+    return `<div class="row"><span class="dot ${map[0]}">${map[1]}</span><div><div class="t">${map[2]}</div><div class="s">${fmtTime(e.at)}</div></div><div class="mono">${map[3]}</div></div>`;
+  }).join("");
+  return `
+    <button class="back" data-go="clients">← All clients</button>
+    <div class="head"><div><h1>${esc(c.name)}</h1><p class="sub">${esc(c.area)} · <span class="mono" style="user-select:all">${esc(c.phone)}</span> · return within ${c.returnDays} days</p></div>
+      <div class="toolbar"><button class="btn" data-act="pay">Record payment</button><button class="btn" data-act="editClient">Edit</button><button class="btn danger" data-act="trashClient">Move to trash</button></div></div>
+    <section class="kv">
+      <div class="stat"><span class="k">Sent</span><span class="v">${s.sent}</span></div>
+      <div class="stat"><span class="k">Received</span><span class="v">${s.back}</span></div>
+      <div class="stat ${s.late ? "alert" : ""}"><span class="k">Holding now</span><span class="v">${s.holding}</span><span class="h">${s.late ? s.late + " late" : "all on time"}</span></div>
+      <div class="stat"><span class="k">To collect</span><span class="v">${rupees(Math.max(0, s.due))}</span></div>
+    </section>
+    <section><h2 style="margin-bottom:10px">Cylinders with this client</h2>
+      <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Size</th><th>Given on</th><th class="num">Days out</th><th>Status</th></tr></thead><tbody>${heldRows || `<tr><td colspan="5"><div class="empty">No cylinders with this client right now.</div></td></tr>`}</tbody></table></div></section>
+    <section class="card"><h2>History</h2><div class="list timeline" style="margin-top:8px">${hist || `<div class="empty">No activity yet.</div>`}</div></section>`;
+}
+
+function viewCylinders(){
+  const f = state.filter;
+  let list = state.cylinders;
+  if (f === "out") list = list.filter(c => c.clientId);
+  if (f === "late") list = list.filter(c => c.clientId && overdueDays(c) > 0).sort((a, b) => overdueDays(b) - overdueDays(a));
+  if (f === "home") list = list.filter(c => !c.clientId);
+  const rows = list.map(c => {
+    const cl = c.clientId && clientById(c.clientId);
+    return `<tr ${cl ? `class="click" data-client="${cl.id}"` : ""}><td class="mono">${c.code}</td><td>${c.type}</td><td>${cl ? esc(cl.name) : "<span class='demo'>In godown</span>"}</td><td>${cl ? fmtDate(c.since) : "—"}</td><td>${cl ? statusPill(c) : `<span class="pill mute">Ready</span>`}</td></tr>`;
+  }).join("");
+  const seg = [["all","All"],["out","With clients"],["late","Late"],["home","In godown"]].map(([k, l]) => `<button data-filter-set="${k}" aria-pressed="${f === k}">${l}</button>`).join("");
+  return `
+    <div class="head"><div><h1>Cylinders</h1><p class="sub">${state.cylinders.length} cylinders with QR tags</p></div></div>
+    <div class="toolbar"><div class="seg">${seg}</div></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Size</th><th>Where</th><th>Given on</th><th>Status</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">No cylinders here.</div></td></tr>`}</tbody></table></div>`;
+}
+
+function viewTrash(){
+  const rows = state.clients.filter(c => c.deletedAt).map(c => {
+    const left = TRASH_DAYS - Math.floor((NOW - c.deletedAt) / DAY);
+    return `<div class="row"><div><div class="t">${esc(c.name)}</div><div class="s">Moved to trash ${fmtDate(c.deletedAt)} · deleted for good in ${left} days</div></div><button class="btn sm" data-restore="${c.id}">Restore</button></div>`;
+  }).join("");
+  return `
+    <div class="head"><div><h1>Trash</h1><p class="sub">Clients stay here for ${TRASH_DAYS} days, then they are removed for good.</p></div></div>
+    <section class="card"><div class="list">${rows || `<div class="empty">Trash is empty.</div>`}</div></section>`;
+}
+
+function render(){
+  renderNav();
+  const views = { home: viewHome, clients: viewClients, client: viewClient, cylinders: viewCylinders, trash: viewTrash };
+  document.getElementById("view").innerHTML = views[state.view]();
+}
+
+/* ---------- Sheets ---------- */
+function openSheet(html){ document.getElementById("layer").innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`; }
+function closeSheet(){ document.getElementById("layer").innerHTML = ""; }
+function toast(msg){
+  const el = document.createElement("div"); el.className = "toast"; el.textContent = msg; document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+
+function clientForm(c){
+  const types = Object.keys(REFILL_PRICE).map(t => `<option ${c && c.type === t ? "selected" : ""}>${t}</option>`).join("");
+  openSheet(`<h2>${c ? "Edit client" : "Add client"}</h2>
+    <form id="clientForm" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="fName">Shop or person name</label><input id="fName" required value="${c ? esc(c.name) : ""}" placeholder="e.g. Sri Sai Tiffin Centre"></div>
+      <div class="f2"><div class="field"><label for="fPhone">Phone</label><input id="fPhone" inputmode="tel" required value="${c ? esc(c.phone) : ""}"></div>
+      <div class="field"><label for="fArea">Area</label><input id="fArea" value="${c ? esc(c.area) : ""}"></div></div>
+      <div class="f2"><div class="field"><label for="fDays">Return within (days)</label><input id="fDays" type="number" min="1" required value="${c ? c.returnDays : 15}"></div>
+      <div class="field"><label for="fType">Usual size</label><select id="fType">${types}</select></div></div>
+      <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary">${c ? "Save" : "Add client"}</button></div>
+    </form>`);
+  document.getElementById("clientForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const data = { name: fName.value.trim(), phone: fPhone.value.trim(), area: fArea.value.trim(), returnDays: +fDays.value, type: fType.value };
+    if (c) Object.assign(c, data);
+    else state.clients.push({ id: "c" + Date.now(), deletedAt: null, addedAt: NOW, ...data });
+    closeSheet(); toast(c ? "Saved" : "Client added"); render();
+  });
+}
+
+function paymentForm(c){
+  openSheet(`<h2>Record payment</h2><p class="sub" style="margin:0">${esc(c.name)} owes ${rupees(Math.max(0, balanceDue(c.id)))}</p>
+    <form id="payForm" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="fAmt">Amount received (₹)</label><input id="fAmt" type="number" min="1" required inputmode="numeric" value="${Math.max(0, balanceDue(c.id))}"></div>
+      <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary">Save payment</button></div></form>`);
+  document.getElementById("payForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    state.events.push({ kind: "pay", clientId: c.id, at: Date.now(), amount: +fAmt.value });
+    closeSheet(); toast("Payment saved"); render();
+  });
+}
+
+function confirmTrash(c){
+  openSheet(`<h2>Move ${esc(c.name)} to trash?</h2><p class="sub" style="margin:0">You can restore this client from Trash for ${TRASH_DAYS} days. After that it is deleted for good.</p>
+    <div class="actions"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="doTrash">Move to trash</button></div>`);
+}
+
+/* Scan flow. The real app opens the phone camera; inside this prototype the camera is not allowed, so "Simulate scan" picks a tag. */
+function scanSheet(){
+  openSheet(`<h2>Scan cylinder QR</h2>
+    <div class="viewfinder"><div class="frame"></div><div class="laser"></div><p>Point the camera at the QR tag</p></div>
+    <p class="demo" style="margin:0">Prototype: the real app uses the phone camera here.</p>
+    <div class="actions"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="simDeliver">Simulate: full cylinder</button><button class="btn primary" data-act="simReturn">Simulate: empty back</button></div>`);
+}
+function deliverSheet(cyl){
+  const opts = activeClients().map(c => `<option value="${c.id}">${esc(c.name)} · ${esc(c.area)}</option>`).join("");
+  openSheet(`<h2>Deliver cylinder</h2>
+    <div class="found"><div class="ic">↑</div><div><div class="mono">${cyl.code}</div><div class="demo">${cyl.type} · in godown</div></div></div>
+    <form id="deliverForm" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="fClient">Give to</label><select id="fClient">${opts}</select></div>
+      <div class="field"><label>Time</label><input value="${fmtTime(Date.now())} (automatic)" disabled></div>
+      <button class="btn primary" style="height:52px;justify-content:center">Confirm delivery</button></form>`);
+  document.getElementById("deliverForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const cl = clientById(fClient.value);
+    addEvent("out", cyl, cl.id, Date.now());
+    closeSheet(); toast(`${cyl.code} delivered to ${cl.name}`); render();
+  });
+}
+function returnSheet(cyl){
+  const cl = clientById(cyl.clientId);
+  openSheet(`<h2>Receive cylinder back</h2>
+    <div class="found"><div class="ic">↓</div><div><div class="mono">${cyl.code}</div><div class="demo">With ${esc(cl.name)} for ${daysOut(cyl)} days</div></div><div style="margin-left:auto">${statusPill(cyl)}</div></div>
+    <button class="btn primary" data-act="doReturn" style="height:52px;justify-content:center">Mark as received</button>`);
+  state.pendingReturn = cyl;
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-go],[data-client],[data-act],[data-filter-set],[data-restore]");
+  if (e.target.id === "scrim") return closeSheet();
+  if (!t) return;
+  if (t.dataset.filterSet) { state.filter = t.dataset.filterSet; return render(); }
+  if (t.dataset.restore) { clientById(t.dataset.restore).deletedAt = null; toast("Client restored"); return render(); }
+  if (t.dataset.go) { if (t.dataset.filter) state.filter = t.dataset.filter; else if (t.dataset.go === "cylinders") state.filter = "all"; return go(t.dataset.go); }
+  if (t.dataset.client) return go("client", t.dataset.client);
+  const c = clientById(state.clientId);
+  const acts = {
+    close: closeSheet,
+    newClient: () => clientForm(null),
+    editClient: () => clientForm(c),
+    pay: () => paymentForm(c),
+    trashClient: () => confirmTrash(c),
+    doTrash: () => { c.deletedAt = Date.now(); closeSheet(); toast("Moved to trash"); go("clients"); },
+    simDeliver: () => { const free = state.cylinders.filter(x => !x.clientId); free.length ? deliverSheet(free[0]) : toast("No full cylinders in godown"); },
+    simReturn: () => { const out = state.cylinders.filter(x => x.clientId); returnSheet(out[Math.floor(Math.random() * out.length)]); },
+    doReturn: () => { const cyl = state.pendingReturn; const name = clientById(cyl.clientId).name; addEvent("in", cyl, cyl.clientId, Date.now()); closeSheet(); toast(`${cyl.code} received from ${name}`); render(); }
+  };
+  if (acts[t.dataset.act]) acts[t.dataset.act]();
+});
+document.getElementById("fab").addEventListener("click", scanSheet);
+document.addEventListener("input", (e) => {
+  if (e.target.id !== "clientSearch") return;
+  state.q = e.target.value; render();
+  const box = document.getElementById("clientSearch"); box.focus(); box.setSelectionRange(box.value.length, box.value.length);
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+
+/* ---------- Theme + layout toggles (remembered per browser) ---------- */
+const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k, v){ try { localStorage.setItem(k, v); } catch {} } };
+const root = document.documentElement;
+const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+function isDark(){ return root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+function applyTheme(t){ if (t) root.dataset.theme = t; themeBtn.innerHTML = isDark() ? SUN : MOON; }
+themeBtn.addEventListener("click", () => { const t = isDark() ? "light" : "dark"; store.set("cd-theme", t); applyTheme(t); });
+const realPhone = matchMedia("(max-width:720px)").matches;
+root.classList.toggle("phone-real", realPhone);
+function applyLayout(mode){
+  root.classList.toggle("m", mode === "mobile");
+  vDesk.setAttribute("aria-pressed", mode !== "mobile");
+  vMob.setAttribute("aria-pressed", mode === "mobile");
+}
+vDesk.addEventListener("click", () => { store.set("cd-layout", "desktop"); applyLayout("desktop"); });
+vMob.addEventListener("click", () => { store.set("cd-layout", "mobile"); applyLayout("mobile"); });
+applyTheme(store.get("cd-theme"));
+applyLayout(store.get("cd-layout") || (realPhone ? "mobile" : "desktop"));
+
+seedData();
+render();
+</script>
+
+</body>
+</html>
