@@ -54,7 +54,7 @@ function returnClock(){
       ? `<span class="late">${late} day${late > 1 ? "s" : ""} late</span><small>${out} days out · limit ${limit}</small>`
       : `<span class="soon">${late === 0 ? "Due today" : `Due in ${-late} day${late === -1 ? "" : "s"}`}</span><small>${out} days out · limit ${limit}</small>`;
     return `<div class="clock click" data-client="${cl.id}" style="cursor:pointer">
-      <div class="who">${avatar(cl)}<div><div class="t">${esc(cl.name)}</div><div class="s"><span class="mono">${c.code}</span> · ${c.type}</div></div></div>
+      <div class="who">${avatar(cl)}<div><div class="t">${esc(cl.name)}</div><div class="meta"><span class="mono">${c.code}</span><span class="tag">${c.type}</span></div></div></div>
       <div class="track" role="img" aria-label="${out} days out of a ${limit}-day limit">
         <span class="used" style="width:${pct(used)}"></span>
         ${late > 0 ? `<span class="over" style="left:${pct(limit)};width:${pct(late)}"></span>` : ""}
@@ -81,7 +81,7 @@ function recentScans(){
     const cl = clientById(e.clientId);
     return `<div class="row click" data-client="${cl.id}" style="cursor:pointer"><div class="who">${avatar(cl)}<div>
       <div class="t">${e.kind === "out" ? "Delivered to" : "Back from"} ${esc(cl.name)}</div>
-      <div class="s"><span class="mono">${e.code}</span> · ${fmtTime(e.at)}</div></div></div>
+      <div class="meta"><span class="mono">${e.code}</span><span class="s">${fmtTime(e.at)}</span></div></div></div>
       <span class="pill ${e.kind === "out" ? "mute" : "ok"}">${e.kind === "out" ? "Out" : "In"}</span></div>`;
   }).join("");
 }
@@ -101,10 +101,12 @@ function viewHome(){
     <div class="head"><div><h1>Overview</h1><p class="sub">${finding}</p></div>
       <div class="toolbar hide-sm"><button class="btn" data-act="addCyl">Add cylinders</button><button class="btn primary" data-act="newClient">+ Add client</button></div></div>
     <section class="kpis">
-      <button class="stat" data-go="cylinders" data-filter="out"><span class="k">With clients</span><span class="v">${out.length}</span><span class="h">of ${state.cylinders.length} cylinders · ${state.cylinders.length - out.length} in godown</span></button>
+      <button class="stat" data-go="cylinders" data-filter="out"><span class="k">With clients</span><span class="v">${out.length}</span><span class="h">${state.cylinders.length - out.length} more in the godown</span></button>
       <button class="stat alert" data-go="cylinders" data-filter="late"><span class="k">Late returns</span><span class="v">${late.length}</span><span class="h">past each client's own limit</span></button>
       <button class="stat" data-go="clients"><span class="k">To collect</span><span class="v">${rupees(due)}</span><span class="h">from ${owing.length} clients</span></button>
-      <div class="stat"><span class="k">Today</span><span class="v">${today.filter(e => e.kind === "out").length} out · ${today.filter(e => e.kind === "in").length} in</span><span class="h">last 24 hours</span></div>
+      <div class="stat"><span class="k">Last 24 hours</span><div class="split">
+        <div><span class="v">${today.filter(e => e.kind === "out").length}</span><span class="key out">Sent</span></div>
+        <div><span class="v">${today.filter(e => e.kind === "in").length}</span><span class="key in">Back</span></div></div></div>
     </section>
     <div class="overview">
       <div class="col">

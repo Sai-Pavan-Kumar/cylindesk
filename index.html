@@ -33,6 +33,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="dashboard.js"></script>
+<script src="prices.js"></script>
 <script>
 const DAY = 86400000;
 const NOW = Date.now();
@@ -46,6 +47,7 @@ const ICONS = {
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   clients: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.5 3.5 5.2"/>',
   cyl: '<rect x="7" y="6" width="10" height="15" rx="3"/><path d="M10 3h4v3h-4zM7 11h10"/>',
+  tag: '<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
@@ -71,6 +73,9 @@ function seedData(){
     id: "c" + i, name, phone, area, returnDays, type, deletedAt: null, addedAt: NOW - (120 + i * 9) * DAY
   }));
   state.clients[8].deletedAt = NOW - 6 * DAY;
+  // Two sample contract rates, so the price page shows how overrides look.
+  state.clients[0].rates = { "Oxygen 47 L": 400 };
+  state.clients[1].rates = { "Argon 47 L": 1650 };
   const types = Object.keys(REFILL_PRICE);
   // Oxygen moves most at construction and pharma sites, so the sample fleet leans that way.
   const TYPE_MIX = [0, 0, 0, 1, 1, 2, 3, 4, 5];
@@ -97,7 +102,7 @@ function seedData(){
   }
 }
 function addEvent(kind, cyl, clientId, at){
-  state.events.push({ kind, code: cyl.code, type: cyl.type, clientId, at, amount: kind === "out" ? REFILL_PRICE[cyl.type] : 0 });
+  state.events.push({ kind, code: cyl.code, type: cyl.type, clientId, at, amount: kind === "out" ? priceFor(clientById(clientId), cyl.type) : 0 });
   cyl.clientId = kind === "out" ? clientId : null;
   cyl.since = kind === "out" ? at : null;
 }
@@ -138,7 +143,7 @@ function statusPill(cyl){
 }
 
 /* ---------- Navigation ---------- */
-const NAV = [["home","Home","home"],["clients","Clients","clients"],["cylinders","Cylinders","cyl"],["trash","Trash","trash"]];
+const NAV = [["home","Home","home"],["clients","Clients","clients"],["cylinders","Cylinders","cyl"],["prices","Prices","tag"],["trash","Trash","trash"]];
 function renderNav(){
   const html = NAV.map(([id, label, ic]) => {
     const count = id === "trash" ? state.clients.filter(c => c.deletedAt).length || "" : "";
@@ -146,7 +151,7 @@ function renderNav(){
     return `<button class="nav" data-go="${id}" aria-current="${current}">${icon(ic)}<span>${label}</span><span class="count">${count}</span></button>`;
   }).join("");
   const scan = `<button class="scan" type="button" data-act="scan"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg></span><span>Scan QR</span></button>`;
-  const items = html.split("</button>").filter(Boolean).map(b => b + "</button>");
+  const items = html.split("</button>").filter(b => b && !b.includes('data-go="prices"')).map(b => b + "</button>");
   items.splice(2, 0, scan);
   document.getElementById("navDesk").innerHTML = html;
   document.getElementById("navPhone").innerHTML = items.join("");
@@ -227,7 +232,7 @@ function viewTrash(){
 
 function render(){
   renderNav();
-  const views = { home: viewHome, clients: viewClients, client: viewClient, cylinders: viewCylinders, trash: viewTrash };
+  const views = { home: viewHome, clients: viewClients, client: viewClient, cylinders: viewCylinders, prices: viewPrices, trash: viewTrash };
   document.getElementById("view").innerHTML = views[state.view]();
 }
 
@@ -248,11 +253,12 @@ function clientForm(c){
       <div class="field"><label for="fArea">Area</label><input id="fArea" value="${c ? esc(c.area) : ""}"></div></div>
       <div class="f2"><div class="field"><label for="fDays">Return within (days)</label><input id="fDays" type="number" min="1" required value="${c ? c.returnDays : 15}"></div>
       <div class="field"><label for="fType">Usual gas</label><select id="fType">${types}</select></div></div>
+      ${clientRateFields(c)}
       <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary">${c ? "Save" : "Add client"}</button></div>
     </form>`);
   document.getElementById("clientForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const data = { name: fName.value.trim(), phone: fPhone.value.trim(), area: fArea.value.trim(), returnDays: +fDays.value, type: fType.value };
+    const data = { name: fName.value.trim(), phone: fPhone.value.trim(), area: fArea.value.trim(), returnDays: +fDays.value, type: fType.value, rates: readClientRates() };
     if (c) Object.assign(c, data);
     else state.clients.push({ id: "c" + Date.now(), deletedAt: null, addedAt: NOW, ...data });
     closeSheet(); toast(c ? "Saved" : "Client added"); render();
@@ -284,13 +290,15 @@ function scanSheet(){
     <div class="actions"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="simDeliver">Simulate: full cylinder</button><button class="btn primary" data-act="simReturn">Simulate: empty back</button></div>`);
 }
 function deliverSheet(cyl){
-  const opts = activeClients().map(c => `<option value="${c.id}">${esc(c.name)} · ${esc(c.area)}</option>`).join("");
+  const opts = activeClients().map(c => `<option value="${c.id}">${esc(c.name)} (${esc(c.area)})</option>`).join("");
   openSheet(`<h2>Deliver cylinder</h2>
-    <div class="found"><div class="ic">↑</div><div><div class="mono">${cyl.code}</div><div class="demo">${cyl.type} · in godown</div></div></div>
+    <div class="found"><div class="ic">↑</div><div><div class="mono">${cyl.code}</div><div class="demo">${cyl.type}, in godown</div></div></div>
     <form id="deliverForm" style="display:flex;flex-direction:column;gap:14px">
       <div class="field"><label for="fClient">Give to</label><select id="fClient">${opts}</select></div>
       <div class="field"><label>Time</label><input value="${fmtTime(Date.now())} (automatic)" disabled></div>
+      <div class="price-line" id="dPrice">${deliveryPriceLine(cyl, activeClients()[0])}</div>
       <button class="btn primary" style="height:52px;justify-content:center">Confirm delivery</button></form>`);
+  fClient.addEventListener("change", () => { dPrice.innerHTML = deliveryPriceLine(cyl, clientById(fClient.value)); });
   document.getElementById("deliverForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const cl = clientById(fClient.value);
@@ -318,6 +326,7 @@ document.addEventListener("click", (e) => {
   const c = clientById(state.clientId);
   const acts = {
     close: closeSheet,
+    savePrices,
     scan: scanSheet,
     newClient: () => clientForm(null),
     editClient: () => clientForm(c),
