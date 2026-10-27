@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 </head>
 <body>
@@ -39,7 +40,7 @@ button{cursor:pointer}
 .app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
 .rail{border-right:1px solid var(--line);background:var(--card);padding:20px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 10px 20px;font-weight:600;font-size:17px}
-.brand i{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:var(--accent-fg);font-style:normal;font-size:14px}
+.brand img{width:28px;height:28px;object-fit:contain}
 .nav{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:0;background:none;text-align:left;color:var(--fg2);min-height:44px;font-weight:500}
 .nav svg{width:20px;height:20px;flex:none}
 .nav:hover{background:var(--raise)}
@@ -157,12 +158,12 @@ tbody tr.click:hover td{background:var(--raise)}
 
 <div class="app">
   <nav class="rail" aria-label="Main">
-    <div class="brand"><i>C</i>Cylindesk</div>
+    <div class="brand"><img src="assets/logo-128.png" alt="" width="28" height="28">Cylindesk</div>
     <div id="navDesk"></div>
     <div class="foot">Prototype · sample data</div>
   </nav>
   <main><div class="wrap"><div class="topbar">
-      <div class="brand"><i>C</i>Cylindesk</div>
+      <div class="brand"><img src="assets/logo-128.png" alt="" width="28" height="28">Cylindesk</div>
       <div class="seg" role="group" aria-label="Layout"><button id="vDesk" type="button">Desktop</button><button id="vMob" type="button">Mobile</button></div>
       <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
     </div><div class="wrap" id="view"></div></div></main>
@@ -174,7 +175,10 @@ tbody tr.click:hover td{background:var(--raise)}
 const DAY = 86400000;
 const NOW = Date.now();
 const TRASH_DAYS = 30;
-const REFILL_PRICE = { "14.2 kg": 950, "19 kg": 1850, "47.5 kg": 4600 };
+const REFILL_PRICE = {
+  "Oxygen 47 L": 450, "Nitrogen 47 L": 600, "Argon 47 L": 1800,
+  "CO₂ 30 kg": 1200, "Acetylene 7 m³": 1500, "LPG 19 kg": 1850
+};
 
 const ICONS = {
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
@@ -186,17 +190,17 @@ const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 
 /* ---------- Sample data (fake, regenerated on each load) ---------- */
 const CLIENT_SEED = [
-  ["Megha Engineering & Infrastructures","98490 11220","Kollur site",30,"47.5 kg"],
-  ["Skyroot Aerospace","90300 44871","GMR Aerospace Park",20,"47.5 kg"],
-  ["Aparna Constructions","98660 30512","Nallagandla site",30,"19 kg"],
-  ["Dr. Reddy's Laboratories","99490 72310","Bachupally unit",15,"47.5 kg"],
-  ["My Home Constructions","96660 18834","Tellapur site",30,"19 kg"],
-  ["Bharat Biotech","98480 90127","Genome Valley",15,"47.5 kg"],
-  ["L&T Metro Rail Hyderabad","90000 56219","Uppal depot",20,"19 kg"],
-  ["Cyient","94400 33781","Manikonda campus",30,"14.2 kg"],
-  ["Ramky Infrastructure","97010 22409","Gachibowli",20,"19 kg"]
+  ["Megha Engineering & Infrastructures","98490 11220","Kollur site",30,"Oxygen 47 L"],
+  ["Skyroot Aerospace","90300 44871","GMR Aerospace Park",20,"Oxygen 47 L"],
+  ["Aparna Constructions","98660 30512","Nallagandla site",30,"Nitrogen 47 L"],
+  ["Dr. Reddy's Laboratories","99490 72310","Bachupally unit",15,"Oxygen 47 L"],
+  ["My Home Constructions","96660 18834","Tellapur site",30,"Nitrogen 47 L"],
+  ["Bharat Biotech","98480 90127","Genome Valley",15,"Oxygen 47 L"],
+  ["L&T Metro Rail Hyderabad","90000 56219","Uppal depot",20,"Nitrogen 47 L"],
+  ["Cyient","94400 33781","Manikonda campus",30,"Argon 47 L"],
+  ["Ramky Infrastructure","97010 22409","Gachibowli",20,"Nitrogen 47 L"]
 ];
-const state = { clients: [], cylinders: [], events: [], view: "home", clientId: null, filter: "all", q: "" };
+const state = { clients: [], cylinders: [], events: [], view: "home", clientId: null, filter: "all", q: "", gas: "" };
 
 function rand(seed){ let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 function seedData(){
@@ -206,7 +210,9 @@ function seedData(){
   }));
   state.clients[8].deletedAt = NOW - 6 * DAY;
   const types = Object.keys(REFILL_PRICE);
-  for (let i = 1; i <= 64; i++) state.cylinders.push({ code: "CYL-" + String(i).padStart(4, "0"), type: types[i % 7 === 0 ? 2 : i % 3 === 0 ? 1 : 0], clientId: null, since: null });
+  // Oxygen moves most at construction and pharma sites, so the sample fleet leans that way.
+  const TYPE_MIX = [0, 0, 0, 1, 1, 2, 3, 4, 5];
+  for (let i = 1; i <= 64; i++) state.cylinders.push({ code: "CYL-" + String(i).padStart(4, "0"), type: types[TYPE_MIX[i % TYPE_MIX.length]], clientId: null, since: null });
 
   // Walk 60 days of history so the charts and balances come from real event math.
   for (let d = 60; d >= 0; d--) {
@@ -381,7 +387,7 @@ function viewClient(){
       <div class="stat"><span class="k">To collect</span><span class="v">${rupees(Math.max(0, s.due))}</span></div>
     </section>
     <section><h2 style="margin-bottom:10px">Cylinders with this client</h2>
-      <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Size</th><th>Given on</th><th class="num">Days out</th><th>Status</th></tr></thead><tbody>${heldRows || `<tr><td colspan="5"><div class="empty">No cylinders with this client right now.</div></td></tr>`}</tbody></table></div></section>
+      <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Gas</th><th>Given on</th><th class="num">Days out</th><th>Status</th></tr></thead><tbody>${heldRows || `<tr><td colspan="5"><div class="empty">No cylinders with this client right now.</div></td></tr>`}</tbody></table></div></section>
     <section class="card"><h2>History</h2><div class="list timeline" style="margin-top:8px">${hist || `<div class="empty">No activity yet.</div>`}</div></section>`;
 }
 
@@ -391,6 +397,7 @@ function viewCylinders(){
   if (f === "out") list = list.filter(c => c.clientId);
   if (f === "late") list = list.filter(c => c.clientId && overdueDays(c) > 0).sort((a, b) => overdueDays(b) - overdueDays(a));
   if (f === "home") list = list.filter(c => !c.clientId);
+  if (state.gas) list = list.filter(c => c.type === state.gas);
   const rows = list.map(c => {
     const cl = c.clientId && clientById(c.clientId);
     return `<tr ${cl ? `class="click" data-client="${cl.id}"` : ""}><td class="mono">${c.code}</td><td>${c.type}</td><td>${cl ? esc(cl.name) : "<span class='demo'>In godown</span>"}</td><td>${cl ? fmtDate(c.since) : "—"}</td><td>${cl ? statusPill(c) : `<span class="pill mute">Ready</span>`}</td></tr>`;
@@ -398,8 +405,9 @@ function viewCylinders(){
   const seg = [["all","All"],["out","With clients"],["late","Late"],["home","In godown"]].map(([k, l]) => `<button data-filter-set="${k}" aria-pressed="${f === k}">${l}</button>`).join("");
   return `
     <div class="head"><div><h1>Cylinders</h1><p class="sub">${state.cylinders.length} cylinders with QR tags</p></div></div>
-    <div class="toolbar"><div class="seg">${seg}</div></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Size</th><th>Where</th><th>Given on</th><th>Status</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">No cylinders here.</div></td></tr>`}</tbody></table></div>`;
+    <div class="toolbar"><div class="seg">${seg}</div>
+      <select class="search" id="gasFilter" style="flex:0 1 220px;min-width:160px" aria-label="Filter by gas"><option value="">All gases</option>${Object.keys(REFILL_PRICE).map(t => `<option ${state.gas === t ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Cylinder</th><th>Gas</th><th>Where</th><th>Given on</th><th>Status</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">No cylinders here.</div></td></tr>`}</tbody></table></div>`;
 }
 
 function viewTrash(){
@@ -434,7 +442,7 @@ function clientForm(c){
       <div class="f2"><div class="field"><label for="fPhone">Phone</label><input id="fPhone" inputmode="tel" required value="${c ? esc(c.phone) : ""}"></div>
       <div class="field"><label for="fArea">Area</label><input id="fArea" value="${c ? esc(c.area) : ""}"></div></div>
       <div class="f2"><div class="field"><label for="fDays">Return within (days)</label><input id="fDays" type="number" min="1" required value="${c ? c.returnDays : 15}"></div>
-      <div class="field"><label for="fType">Usual size</label><select id="fType">${types}</select></div></div>
+      <div class="field"><label for="fType">Usual gas</label><select id="fType">${types}</select></div></div>
       <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary">${c ? "Save" : "Add client"}</button></div>
     </form>`);
   document.getElementById("clientForm").addEventListener("submit", (e) => {
@@ -522,6 +530,7 @@ document.addEventListener("input", (e) => {
   state.q = e.target.value; render();
   const box = document.getElementById("clientSearch"); box.focus(); box.setSelectionRange(box.value.length, box.value.length);
 });
+document.addEventListener("change", (e) => { if (e.target.id === "gasFilter") { state.gas = e.target.value; render(); } });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 
 /* ---------- Theme + layout toggles (remembered per browser) ---------- */
