@@ -122,7 +122,7 @@ tbody tr.click:hover td{background:var(--raise)}
 .found{display:flex;gap:12px;align-items:center;background:var(--raise);border-radius:12px;padding:14px}
 .found .ic{width:44px;height:44px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;z-index:60;font-size:14px}
-.tabbar,.fab{display:none}
+.tabbar{display:none}
 @media (prefers-reduced-motion:reduce){.viewfinder .laser{animation:none;top:50%}}
 @media (max-width:900px){
   .stats,.kv{grid-template-columns:repeat(2,1fr)}
@@ -130,7 +130,7 @@ tbody tr.click:hover td{background:var(--raise)}
 }
 .m .app{grid-template-columns:1fr;max-width:440px;margin:0 auto}
 .m .rail{display:none}
-.m main{padding-block:16px 160px}
+.m main{padding-block:16px 110px}
 .m h1{font-size:24px}
 .m .stats,.m .kv{grid-template-columns:repeat(2,1fr)}
 .m .grid2{grid-template-columns:1fr}
@@ -142,9 +142,10 @@ tbody tr.click:hover td{background:var(--raise)}
 .m .scrim{padding:0}
 .m .hide-sm{display:none}
 .m .topbar .brand{display:flex}
-/* Scan button lives only in phone view: the laptop is for looking, the phone is for scanning */
-.m .fab{display:flex;position:fixed;z-index:35;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));
-  align-items:center;gap:10px;height:56px;padding:0 26px;border-radius:99px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:16px;box-shadow:0 8px 24px rgba(0,90,224,.35)}
+/* Scan is the centre tab of the phone bar: always in reach of the thumb, never covering content */
+.m .tabbar .scan{flex:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--accent);font-size:11px;font-weight:600;min-height:44px}
+.m .tabbar .scan span:first-child{width:48px;height:36px;border-radius:12px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center}
+.m .tabbar .scan svg{width:22px;height:22px}
 .m:not(.phone-real) body{background:var(--raise)}
 .m:not(.phone-real) main{background:var(--bg);min-height:100vh;border-inline:1px solid var(--line)}
 .topbar{display:flex;align-items:center;justify-content:flex-end;gap:8px}
@@ -167,10 +168,6 @@ tbody tr.click:hover td{background:var(--raise)}
     </div><div class="wrap" id="view"></div></div></main>
 </div>
 <nav class="tabbar" id="navPhone" aria-label="Main"></nav>
-<button class="fab" id="fab" type="button">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>
-  Scan QR
-</button>
 <div id="layer"></div>
 
 <script>
@@ -189,15 +186,15 @@ const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 
 /* ---------- Sample data (fake, regenerated on each load) ---------- */
 const CLIENT_SEED = [
-  ["Sri Sai Tiffin Centre","98480 12345","Ameerpet",15,"14.2 kg"],
-  ["Hotel Paradise Mess","99890 22341","Kukatpally",20,"19 kg"],
-  ["Lakshmi Sweets","90000 45671","Dilsukhnagar",15,"14.2 kg"],
-  ["Annapurna Caterers","98660 78120","Miyapur",30,"47.5 kg"],
-  ["Royal Biryani House","96760 11209","Tolichowki",10,"19 kg"],
-  ["Green Leaf Hostel","93910 55432","Madhapur",30,"19 kg"],
-  ["Venkateswara Bakery","97010 66547","Secunderabad",15,"14.2 kg"],
-  ["Krishna Dhaba","98850 30981","Shamshabad",20,"47.5 kg"],
-  ["Ruchi Fast Food","94400 87213","LB Nagar",10,"14.2 kg"]
+  ["Megha Engineering & Infrastructures","98490 11220","Kollur site",30,"47.5 kg"],
+  ["Skyroot Aerospace","90300 44871","GMR Aerospace Park",20,"47.5 kg"],
+  ["Aparna Constructions","98660 30512","Nallagandla site",30,"19 kg"],
+  ["Dr. Reddy's Laboratories","99490 72310","Bachupally unit",15,"47.5 kg"],
+  ["My Home Constructions","96660 18834","Tellapur site",30,"19 kg"],
+  ["Bharat Biotech","98480 90127","Genome Valley",15,"47.5 kg"],
+  ["L&T Metro Rail Hyderabad","90000 56219","Uppal depot",20,"19 kg"],
+  ["Cyient","94400 33781","Manikonda campus",30,"14.2 kg"],
+  ["Ramky Infrastructure","97010 22409","Gachibowli",20,"19 kg"]
 ];
 const state = { clients: [], cylinders: [], events: [], view: "home", clientId: null, filter: "all", q: "" };
 
@@ -280,8 +277,11 @@ function renderNav(){
     const current = state.view === id || (id === "clients" && state.view === "client");
     return `<button class="nav" data-go="${id}" aria-current="${current}">${icon(ic)}<span>${label}</span><span class="count">${count}</span></button>`;
   }).join("");
+  const scan = `<button class="scan" type="button" data-act="scan"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg></span><span>Scan QR</span></button>`;
+  const items = html.split("</button>").filter(Boolean).map(b => b + "</button>");
+  items.splice(2, 0, scan);
   document.getElementById("navDesk").innerHTML = html;
-  document.getElementById("navPhone").innerHTML = html;
+  document.getElementById("navPhone").innerHTML = items.join("");
 }
 function go(view, clientId){ state.view = view; state.clientId = clientId || null; render(); window.scrollTo(0, 0); }
 
@@ -505,6 +505,7 @@ document.addEventListener("click", (e) => {
   const c = clientById(state.clientId);
   const acts = {
     close: closeSheet,
+    scan: scanSheet,
     newClient: () => clientForm(null),
     editClient: () => clientForm(c),
     pay: () => paymentForm(c),
@@ -516,7 +517,6 @@ document.addEventListener("click", (e) => {
   };
   if (acts[t.dataset.act]) acts[t.dataset.act]();
 });
-document.getElementById("fab").addEventListener("click", scanSheet);
 document.addEventListener("input", (e) => {
   if (e.target.id !== "clientSearch") return;
   state.q = e.target.value; render();
