@@ -4,185 +4,35 @@
 <meta charset="utf-8">
 <link rel="icon" type="image/png" href="assets/favicon-32.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cylindesk</title>
+<meta name="description" content="Track gas cylinders out with clients, late returns and money to collect.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<title>Cylindesk</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
-<style>
-/* Layout: left rail on desktop, bottom tab bar + big scan button on phone. One calm blue accent, status lives in small pills. */
-:root{
-  --bg:#F5F5F7; --card:#FFFFFF; --raise:#F0F0F8; --line:#E6E6EE;
-  --fg:#0D0D1A; --fg2:#555570; --fg3:#9999B0;
-  --accent:#005AE0; --accent-soft:#E0ECFF; --accent-fg:#FFFFFF;
-  --ok:#16A34A; --ok-bg:#E8F7EE; --warn:#B45309; --warn-bg:#FEF3E2; --bad:#DC2626; --bad-bg:#FDECEC;
-  --font:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
-  --r:12px;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#09090F; --card:#111118; --raise:#18181F; --line:#23232E;
-  --fg:#EEEEF5; --fg2:#A0A0BC; --fg3:#6A6A88;
-  --accent:#3380F0; --accent-soft:#132544; --accent-fg:#FFFFFF;
-  --ok:#4ADE80; --ok-bg:#0F2A1A; --warn:#FBBF24; --warn-bg:#2B210B; --bad:#F87171; --bad-bg:#2C1212; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#09090F; --card:#111118; --raise:#18181F; --line:#23232E;
-  --fg:#EEEEF5; --fg2:#A0A0BC; --fg3:#6A6A88;
-  --accent:#3380F0; --accent-soft:#132544; --accent-fg:#FFFFFF;
-  --ok:#4ADE80; --ok-bg:#0F2A1A; --warn:#FBBF24; --warn-bg:#2B210B; --bad:#F87171; --bad-bg:#2C1212; color-scheme:dark}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
-button,input,select{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
-.rail{border-right:1px solid var(--line);background:var(--card);padding:20px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
-.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 20px;font-weight:600;font-size:17px}
-.brand img{width:28px;height:28px;object-fit:contain}
-.nav{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:0;background:none;text-align:left;color:var(--fg2);min-height:44px;font-weight:500}
-.nav svg{width:20px;height:20px;flex:none}
-.nav:hover{background:var(--raise)}
-.nav[aria-current="true"]{background:var(--accent-soft);color:var(--accent)}
-.nav .count{margin-left:auto;font-size:12px;color:var(--fg3)}
-.rail .foot{margin-top:auto;font-size:12px;color:var(--fg3);padding:0 12px}
-main{min-width:0;padding-block:28px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
-.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
-h1{font-size:28px;font-weight:600;margin:0;letter-spacing:-.01em;text-wrap:balance}
-h2{font-size:16px;font-weight:600;margin:0}
-.sub{color:var(--fg2);margin:2px 0 0}
-.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:500}
-.btn:hover{background:var(--raise)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-.btn.primary:hover{filter:brightness(1.08)}
-.btn.danger{color:var(--bad)}
-.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:4px;text-align:left}
-.stat .k{font-size:13px;color:var(--fg2)}
-.stat .v{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.stat .h{font-size:12px;color:var(--fg3)}
-.stat.alert .v{color:var(--bad)}
-button.stat:hover{border-color:var(--accent)}
-.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
-.grid2>*{min-width:0}
-.legend{display:flex;gap:16px;font-size:13px;color:var(--fg2)}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
-.chart text{fill:var(--fg3);font-size:11px;font-family:var(--font)}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap}
-.pill.ok{background:var(--ok-bg);color:var(--ok)}
-.pill.warn{background:var(--warn-bg);color:var(--warn)}
-.pill.bad{background:var(--bad-bg);color:var(--bad)}
-.pill.mute{background:var(--raise);color:var(--fg2)}
-.list{display:flex;flex-direction:column}
-.row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
-.row:first-child{border-top:0}
-.row .t{font-weight:500}
-.row .s{font-size:13px;color:var(--fg2)}
-.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
-table{width:100%;border-collapse:collapse;min-width:640px}
-th{text-align:left;font-size:12px;font-weight:500;color:var(--fg3);text-transform:uppercase;letter-spacing:.06em;padding:12px 16px;border-bottom:1px solid var(--line)}
-td{padding:14px 16px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
-tr:last-child td{border-bottom:0}
-tbody tr.click{cursor:pointer}
-tbody tr.click:hover td{background:var(--raise)}
-.num{text-align:right}
-.mono{font-family:var(--mono);font-size:13px}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.search{flex:1;min-width:200px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:0 14px}
-.seg{display:inline-flex;background:var(--raise);border-radius:10px;padding:3px}
-.seg button{border:0;background:none;padding:0 12px;min-height:38px;border-radius:8px;color:var(--fg2);font-size:14px}
-.seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.back{border:0;background:none;color:var(--fg2);padding:0;min-height:32px;display:inline-flex;gap:6px;align-items:center}
-.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.timeline .row{grid-template-columns:28px 1fr auto}
-.dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px}
-.dot.out{background:var(--accent-soft);color:var(--accent)}
-.dot.in{background:var(--ok-bg);color:var(--ok)}
-.dot.pay{background:var(--raise);color:var(--fg2)}
-.empty{padding:40px 16px;text-align:center;color:var(--fg2)}
-.banner{display:flex;gap:12px;align-items:center;background:var(--accent-soft);color:var(--fg);border-radius:var(--r);padding:12px 16px;font-size:14px}
-.demo{font-size:12px;color:var(--fg3)}
-/* Sheet (modal on desktop, bottom sheet on phone) */
-.scrim{position:fixed;inset:0;background:rgba(10,10,20,.45);z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
-.sheet{background:var(--card);border-radius:16px;width:100%;max-width:440px;max-height:90vh;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:13px;color:var(--fg2);font-weight:500}
-.field input,.field select{height:48px;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:0 14px}
-.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.actions{display:flex;gap:8px;justify-content:flex-end}
-.viewfinder{aspect-ratio:1;max-width:100%;border-radius:16px;background:#0B0B12;position:relative;overflow:hidden;display:grid;place-items:center}
-.viewfinder .frame{width:62%;aspect-ratio:1;border:3px solid rgba(255,255,255,.85);border-radius:18px}
-.viewfinder .laser{position:absolute;left:19%;right:19%;height:2px;background:#3380F0;box-shadow:0 0 12px #3380F0;animation:scan 1.8s ease-in-out infinite alternate}
-@keyframes scan{from{top:22%}to{top:76%}}
-.viewfinder p{position:absolute;bottom:12px;margin:0;color:rgba(255,255,255,.7);font-size:13px}
-.found{display:flex;gap:12px;align-items:center;background:var(--raise);border-radius:12px;padding:14px}
-.found .ic{width:44px;height:44px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;z-index:60;font-size:14px}
-.tabbar{display:none}
-@media (prefers-reduced-motion:reduce){.viewfinder .laser{animation:none;top:50%}}
-@media (max-width:900px){
-  .stats,.kv{grid-template-columns:repeat(2,1fr)}
-  .grid2{grid-template-columns:1fr}
-}
-.m .app{grid-template-columns:1fr;max-width:440px;margin:0 auto}
-.m .rail{display:none}
-.m main{padding-block:16px 110px}
-.m h1{font-size:24px}
-.m .stats,.m .kv{grid-template-columns:repeat(2,1fr)}
-.m .grid2{grid-template-columns:1fr}
-.m .tabbar{display:flex;position:fixed;left:50%;transform:translateX(-50%);width:min(100%,440px);bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);
-  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
-.m .tabbar .nav{flex:1;flex-direction:column;gap:2px;font-size:11px;padding:6px 4px;justify-content:center}
-.m .tabbar .nav .count{display:none}
-.m .sheet{align-self:flex-end;border-radius:20px 20px 0 0;max-width:440px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
-.m .scrim{padding:0}
-.m .hide-sm{display:none}
-.m .topbar .brand{display:flex}
-/* Scan is the centre tab of the phone bar: always in reach of the thumb, never covering content */
-.m .tabbar .scan{flex:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--accent);font-size:11px;font-weight:600;min-height:44px}
-.m .tabbar .scan span:first-child{width:48px;height:36px;border-radius:12px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center}
-.m .tabbar .scan svg{width:22px;height:22px}
-.m:not(.phone-real) body{background:var(--raise)}
-.m:not(.phone-real) main{background:var(--bg);min-height:100vh;border-inline:1px solid var(--line)}
-.topbar{display:flex;align-items:center;justify-content:flex-end;gap:8px}
-.topbar .brand{display:none;padding:0;margin-right:auto}
-.iconbtn{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg2)}
-.iconbtn:hover{background:var(--raise)}
-.iconbtn svg{width:20px;height:20px}
-#printArea{display:none}
-/* Label sheet: 3 across on A4, sized for 60 mm vinyl labels; code printed under the QR in case the camera fails */
-@media print{
-  @page{size:A4;margin:10mm}
-  body>*:not(#printArea){display:none!important}
-  #printArea{display:grid!important;grid-template-columns:repeat(3,60mm);gap:4mm;background:#fff}
-  #printArea .label{width:60mm;height:60mm;border:0.3mm dashed #999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5mm;break-inside:avoid;color:#000;font-family:var(--font)}
-  #printArea svg{width:38mm;height:38mm}
-  #printArea .code{font:600 13pt var(--mono)}
-  #printArea .gas{font-size:9pt}
-}
-</style>
 
 <div class="app">
   <nav class="rail" aria-label="Main">
-    <div class="brand"><img src="assets/logo-128.png" alt="" width="28" height="28">Cylindesk</div>
+    <div class="brand"><img src="assets/logo-128.png" alt="" width="26" height="26"><span>Cylindesk<span class="workspace">Sample Gases, Hyderabad</span></span></div>
     <div id="navDesk"></div>
     <div class="foot">Prototype · sample data</div>
   </nav>
-  <main><div class="wrap"><div class="topbar">
-      <div class="brand"><img src="assets/logo-128.png" alt="" width="28" height="28">Cylindesk</div>
-      <div class="seg" role="group" aria-label="Layout"><button id="vDesk" type="button">Desktop</button><button id="vMob" type="button">Mobile</button></div>
-      <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
-    </div><div class="wrap" id="view"></div></div></main>
+  <header class="topbar">
+    <div class="brand"><img src="assets/logo-128.png" alt="" width="26" height="26">Cylindesk</div>
+    <span class="chip">Sample data</span>
+    <span class="grow"></span>
+    <div class="switch" role="group" aria-label="Layout"><button id="vDesk" type="button">Desktop</button><button id="vMob" type="button">Mobile</button></div>
+    <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
+  </header>
+  <main><div id="view"></div></main>
 </div>
 <nav class="tabbar" id="navPhone" aria-label="Main"></nav>
 <div id="layer"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="dashboard.js"></script>
 <script>
 const DAY = 86400000;
 const NOW = Date.now();
@@ -303,72 +153,14 @@ function renderNav(){
 }
 function go(view, clientId){ state.view = view; state.clientId = clientId || null; render(); window.scrollTo(0, 0); }
 
-/* ---------- Charts (hand-drawn SVG, one scale per chart) ---------- */
-function flowChart(){
-  const days = 14, W = 640, H = 220, pad = { l: 28, r: 8, t: 12, b: 28 };
-  const buckets = Array.from({ length: days }, (_, i) => ({ t: NOW - (days - 1 - i) * DAY, out: 0, in: 0 }));
-  state.events.forEach(e => {
-    const idx = days - 1 - Math.floor((NOW - e.at) / DAY);
-    if (idx >= 0 && idx < days && e.kind !== "pay") buckets[idx][e.kind]++;
-  });
-  const max = Math.max(4, ...buckets.map(b => Math.max(b.out, b.in)));
-  const top = Math.ceil(max / 2) * 2;
-  const cw = (W - pad.l - pad.r) / days, bw = Math.min(10, cw / 3.2);
-  const y = (v) => pad.t + (H - pad.t - pad.b) * (1 - v / top);
-  let svg = "";
-  for (let v = 0; v <= top; v += top / 2) svg += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
-  buckets.forEach((b, i) => {
-    const cx = pad.l + cw * i + cw / 2;
-    svg += `<rect x="${cx - bw - 1}" y="${y(b.out)}" width="${bw}" height="${y(0) - y(b.out)}" rx="3" fill="var(--accent)"><title>${fmtDate(b.t)}: ${b.out} sent</title></rect>`;
-    svg += `<rect x="${cx + 1}" y="${y(b.in)}" width="${bw}" height="${y(0) - y(b.in)}" rx="3" fill="var(--fg3)" opacity=".55"><title>${fmtDate(b.t)}: ${b.in} received</title></rect>`;
-    if (i % 2 === 1 || i === days - 1) svg += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${i === days - 1 ? "Today" : fmtDate(b.t)}</text>`;
-  });
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Cylinders sent and received, last 14 days">${svg}</svg>`;
-}
-function stockBar(){
-  const total = state.cylinders.length;
-  const withClients = state.cylinders.filter(c => c.clientId);
-  const late = withClients.filter(c => overdueDays(c) > 0).length;
-  const parts = [["In godown", total - withClients.length, "var(--fg3)"], ["With clients", withClients.length - late, "var(--accent)"], ["Late", late, "var(--bad)"]];
-  const bar = parts.map(([, n, col]) => `<span style="flex:${n};background:${col}"></span>`).join("");
-  const rows = parts.map(([label, n, col]) => `<div class="row"><div class="t" style="display:flex;gap:10px;align-items:center"><b style="width:10px;height:10px;border-radius:3px;background:${col};display:inline-block"></b>${label}</div><div class="mono">${n}</div></div>`).join("");
-  return `<div style="display:flex;gap:3px;height:14px;border-radius:7px;overflow:hidden;margin:14px 0 8px">${bar}</div><div class="list">${rows}</div>`;
-}
-
-/* ---------- Views ---------- */
-function viewHome(){
-  const clients = activeClients();
-  const out = state.cylinders.filter(c => c.clientId);
-  const late = out.filter(c => overdueDays(c) > 0).sort((a, b) => overdueDays(b) - overdueDays(a));
-  const due = clients.reduce((s, c) => s + Math.max(0, balanceDue(c.id)), 0);
-  const today = state.events.filter(e => NOW - e.at < DAY && e.kind !== "pay");
-  const lateRows = late.slice(0, 6).map(c => {
-    const cl = clientById(c.clientId);
-    return `<div class="row click" data-client="${cl.id}" style="cursor:pointer"><div><div class="t">${esc(cl.name)}</div><div class="s"><span class="mono">${c.code}</span> · given ${fmtDate(c.since)}</div></div>${statusPill(c)}</div>`;
-  }).join("") || `<div class="empty">Nothing late. Every cylinder is within its time.</div>`;
-  return `
-    <div class="head"><div><h1>Good ${new Date().getHours() < 12 ? "morning" : "evening"}</h1><p class="sub">${new Date(NOW).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p></div>
-    <button class="btn primary hide-sm" data-act="newClient">+ Add client</button></div>
-    <div class="banner"><span class="pill mute">Demo</span>All names and numbers here are sample data for the prototype.</div>
-    <section class="stats">
-      <button class="stat" data-go="cylinders" data-filter="out"><span class="k">With clients</span><span class="v">${out.length}</span><span class="h">of ${state.cylinders.length} cylinders</span></button>
-      <button class="stat alert" data-go="cylinders" data-filter="late"><span class="k">Late returns</span><span class="v">${late.length}</span><span class="h">past return time</span></button>
-      <div class="stat"><span class="k">Money to collect</span><span class="v">${rupees(due)}</span><span class="h">from ${clients.filter(c => balanceDue(c.id) > 0).length} clients</span></div>
-      <div class="stat"><span class="k">Today</span><span class="v">${today.filter(e => e.kind === "out").length} / ${today.filter(e => e.kind === "in").length}</span><span class="h">sent / received</span></div>
-    </section>
-    <section class="grid2">
-      <div class="card"><div class="head"><h2>Sent and received</h2><div class="legend"><span><b style="background:var(--accent)"></b>Sent</span><span><b style="background:var(--fg3);opacity:.55"></b>Received</span></div></div><div style="margin-top:12px">${flowChart()}</div></div>
-      <div class="card"><h2>Where cylinders are</h2>${stockBar()}</div>
-    </section>
-    <section class="card"><div class="head"><h2>Call these clients first</h2><button class="btn sm" data-go="cylinders" data-filter="late">See all late</button></div><div class="list" style="margin-top:8px">${lateRows}</div></section>`;
-}
+/* ---------- Views (overview lives in dashboard.js) ---------- */
 
 function viewClients(){
   const q = state.q.toLowerCase();
   const rows = activeClients().filter(c => !q || (c.name + c.phone + c.area).toLowerCase().includes(q)).map(c => {
     const s = clientSummary(c);
     const st = s.late ? `<span class="pill bad">${s.late} late · ${s.worst}d</span>` : s.holding ? `<span class="pill ok">On time</span>` : `<span class="pill mute">Nothing out</span>`;
-    return `<tr class="click" data-client="${c.id}"><td><div style="font-weight:500">${esc(c.name)}</div><div class="demo">${esc(c.area)} · ${esc(c.phone)}</div></td>
+    return `<tr class="click" data-client="${c.id}"><td><div class="who">${avatar(c)}<div><div class="t">${esc(c.name)}</div><div class="demo">${esc(c.area)} · ${esc(c.phone)}</div></div></div></td>
       <td class="num">${s.sent}</td><td class="num">${s.back}</td><td class="num" style="font-weight:600">${s.holding}</td>
       <td>${st}</td><td class="num">${s.due > 0 ? rupees(s.due) : "<span class='demo'>Paid</span>"}</td></tr>`;
   }).join("");
@@ -392,7 +184,7 @@ function viewClient(){
     <button class="back" data-go="clients">← All clients</button>
     <div class="head"><div><h1>${esc(c.name)}</h1><p class="sub">${esc(c.area)} · <span class="mono" style="user-select:all">${esc(c.phone)}</span> · return within ${c.returnDays} days</p></div>
       <div class="toolbar"><button class="btn" data-act="pay">Record payment</button><button class="btn" data-act="editClient">Edit</button><button class="btn danger" data-act="trashClient">Move to trash</button></div></div>
-    <section class="kv">
+    <section class="kpis">
       <div class="stat"><span class="k">Sent</span><span class="v">${s.sent}</span></div>
       <div class="stat"><span class="k">Received</span><span class="v">${s.back}</span></div>
       <div class="stat ${s.late ? "alert" : ""}"><span class="k">Holding now</span><span class="v">${s.holding}</span><span class="h">${s.late ? s.late + " late" : "all on time"}</span></div>
